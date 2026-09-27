@@ -1,0 +1,19 @@
+services:
+  toolgate:
+    build: .
+    image: toolgate:latest
+    container_name: toolgate
+    ports:
+      - "8848:8848"
+    environment:
+      TOOLGATE_HOME: /data
+      # Generate a key with `toolgate keygen` and paste it here, or remove
+      # this line to let ToolGate persist master.key inside the volume.
+      TOOLGATE_MASTER_KEY: ""
+      TOOLGATE_RATE_LIMIT: "600"
+    volumes:
+      - toolgate-data:/data
+    restart: unless-stopped
+
+volumes:
+  toolgate-data:

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ToolGate · 工具网关控制台</title>
+<style>
+  :root {
+    --bg: #0f1720;
+    --panel: #16212d;
+    --panel-2: #1c2a38;
+    --line: #27384a;
+    --text: #e6edf3;
+    --muted: #8aa0b4;
+    --teal: #14b8a6;
+    --teal-dark: #0d9488;
+    --amber: #f59e0b;
+    --red: #ef4444;
+    --green: #22c55e;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+      "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    font-size: 14px; line-height: 1.6;
+  }
+  a { color: var(--teal); }
+  header {
+    padding: 18px 28px; border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    background: linear-gradient(180deg, #13202c, #0f1720);
+  }
+  .logo { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .logo .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--teal);
+    box-shadow: 0 0 12px var(--teal); }
+  .spacer { flex: 1; }
+  .conn { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  input, select, textarea, button {
+    font: inherit; color: var(--text); background: var(--panel-2);
+    border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; outline: none;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--teal); }
+  button { cursor: pointer; background: var(--teal-dark); border-color: var(--teal-dark); font-weight: 600; }
+  button:hover { background: var(--teal); border-color: var(--teal); }
+  button.ghost { background: transparent; border-color: var(--line); font-weight: 500; }
+  button.ghost:hover { border-color: var(--teal); color: var(--teal); }
+  .pill { font-size: 12px; padding: 2px 9px; border-radius: 999px; border: 1px solid var(--line);
+    color: var(--muted); background: var(--panel); }
+  .pill.endpoint { color: #5eead4; border-color: #0f766e; }
+  .pill.cli { color: #fcd34d; border-color: #92600a; }
+  .pill.ok { color: var(--green); border-color: #14532d; }
+  .pill.bad { color: var(--red); border-color: #7f1d1d; }
+  main { padding: 24px 28px; max-width: 1180px; margin: 0 auto; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap; }
+  .tabs button { background: transparent; border: 1px solid var(--line); color: var(--muted); }
+  .tabs button.active { background: var(--teal-dark); border-color: var(--teal); color: #fff; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 16px; }
+  .card h3 { margin: 0 0 6px; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+  .card .meta { color: var(--muted); font-size: 12px; margin-top: 10px; word-break: break-all; }
+  .card .desc { color: #c6d4e1; min-height: 20px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+  .row > * { flex: 1; min-width: 140px; }
+  pre { background: #0b131b; border: 1px solid var(--line); border-radius: 8px; padding: 12px;
+    overflow: auto; max-height: 420px; white-space: pre-wrap; word-break: break-word; }
+  label.fld { display: block; margin-bottom: 10px; color: var(--muted); font-size: 12px; }
+  label.fld input, label.fld textarea, label.fld select { width: 100%; margin-top: 4px; }
+  .hidden { display: none; }
+  .muted { color: var(--muted); }
+  .tag { display: inline-block; margin: 2px 4px 2px 0; font-size: 11px; color: var(--teal);
+    background: #0b2f2c; border: 1px solid #115e59; border-radius: 6px; padding: 1px 7px; }
+  .toast { position: fixed; bottom: 22px; right: 22px; background: var(--panel);
+    border: 1px solid var(--line); border-left: 3px solid var(--teal); border-radius: 8px;
+    padding: 12px 16px; max-width: 360px; box-shadow: 0 10px 30px rgba(0,0,0,.4); }
+  .toast.err { border-left-color: var(--red); }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><span class="dot"></span> ToolGate <span class="pill" id="version">v</span></div>
+  <div class="spacer"></div>
+  <div class="conn">
+    <input id="baseUrl" size="20" placeholder="http://127.0.0.1:8848" />
+    <input id="token" size="28" type="password" placeholder="Gateway token (Bearer)" />
+    <button class="ghost" id="saveConn">保存</button>
+    <span class="pill" id="health">未连接</span>
+  </div>
+</header>
+
+<main>
+  <div class="tabs">
+    <button data-tab="catalog" class="active">🧰 工具目录</button>
+    <button data-tab="search">🔍 搜索</button>
+    <button data-tab="call">🚀 在线调用</button>
+    <button data-tab="audit">📜 审计日志</button>
+  </div>
+
+  <!-- catalog -->
+  <section id="tab-catalog">
+    <div class="row">
+      <select id="filterKind">
+        <option value="">全部类型</option>
+        <option value="endpoint">endpoint（HTTP）</option>
+        <option value="cli">cli（命令行）</option>
+      </select>
+      <button id="refreshTools">刷新</button>
+    </div>
+    <div class="grid" id="toolGrid"></div>
+  </section>
+
+  <!-- search -->
+  <section id="tab-search" class="hidden">
+    <div class="row">
+      <input id="searchQ" placeholder="描述你想做的事，例如：查询天气 / 生成图片 / send email" />
+      <select id="searchKind"><option value="">全部</option><option value="endpoint">endpoint</option><option value="cli">cli</option></select>
+      <button id="doSearch">搜索</button>
+    </div>
+    <div class="grid" id="searchGrid"></div>
+  </section>
+
+  <!-- call -->
+  <section id="tab-call" class="hidden">
+    <div class="card">
+      <div class="row">
+        <label class="fld" style="flex:2">选择工具
+          <select id="callTool"></select>
+        </label>
+        <label class="fld">方法（endpoint）
+          <select id="callMethod"><option>GET</option><option>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option></select>
+        </label>
+      </div>
+      <div id="endpointFields">
+        <label class="fld">子路径 path<input id="callPath" placeholder="users/123" /></label>
+        <label class="fld">查询串 query（可选）<input id="callQuery" placeholder="verbose=true" /></label>
+        <label class="fld">请求体 body（可选，JSON 或文本）<textarea id="callBody" rows="4"></textarea></label>
+      </div>
+      <div id="cliFields" class="hidden">
+        <label class="fld">命名参数 params（JSON 对象）<textarea id="callParams" rows="3" placeholder='{"format":"json"}'></textarea></label>
+        <label class="fld">自由参数 args（每行一个，仅当工具允许）<textarea id="callArgs" rows="2"></textarea></label>
+        <label class="fld">标准输入 stdin（可选）<textarea id="callStdin" rows="2"></textarea></label>
+      </div>
+      <button id="doCall">发送调用</button>
+    </div>
+    <h3 class="muted" style="margin-top:18px">响应</h3>
+    <pre id="callResult" class="muted">尚未调用</pre>
+  </section>
+
+  <!-- audit -->
+  <section id="tab-audit" class="hidden">
+    <div class="row">
+      <input id="auditTool" placeholder="按工具名过滤（可选）" />
+      <input id="auditLimit" type="number" value="50" />
+      <button id="doAudit">加载审计日志</button>
+    </div>
+    <pre id="auditResult" class="muted">点击加载</pre>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const store = {
+  get base() { return ($("baseUrl").value || window.location.origin).replace(/\/$/, ""); },
+  get token() { return $("token").value.trim(); }
+};
+function toast(msg, isErr) {
+  const el = document.createElement("div");
+  el.className = "toast" + (isErr ? " err" : "");
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+async function api(path, options = {}) {
+  const res = await fetch(store.base + path, {
+    ...options,
+    headers: { "Authorization": "Bearer " + store.token, ...(options.headers || {}) }
+  });
+  const text = await res.text();
+  let data;
+  try { data = JSON.parse(text); } catch { data = text; }
+  return { status: res.status, data };
+}
+function toolCard(t) {
+  const kind = t.kind;
+  const tags = (t.tags || []).map(x => `<span class="tag">${x}</span>`).join("");
+  const meta = kind === "endpoint"
+    ? `🔗 ${t.base_url}<br/>🔐 ${(t.bindings||[]).map(b => b.credential + "→" + b.location).join(", ")}`
+    : `⌨️ ${(t.argv||[]).join(" ")}<br/>🔐 ${(t.env||[]).map(e => e.credential + "→" + e.env).join(", ")}`;
+  return `<div class="card">
+    <h3>${t.name} <span class="pill ${kind}">${kind}</span></h3>
+    <div class="desc">${t.description || ""}</div>
+    <div>${tags}</div>
+    <div class="meta">${meta}</div>
+  </div>`;
+}
+async function loadHealth() {
+  try {
+    const { data } = await api("/healthz");
+    $("health").textContent = "已连接 · " + (data.version || "");
+    $("health").className = "pill ok";
+    $("version").textContent = "v" + (data.version || "");
+  } catch {
+    $("health").textContent = "连接失败";
+    $("health").className = "pill bad";
+  }
+}
+async function loadTools() {
+  const kind = $("filterKind").value;
+  const { data } = await api("/v1/tools" + (kind ? "?kind=" + kind : ""));
+  const tools = data.tools || [];
+  $("toolGrid").innerHTML = tools.map(toolCard).join("") || `<p class="muted">暂无工具</p>`;
+  $("callTool").innerHTML = tools.map(t => `<option value="${t.name}">${t.name} (${t.kind})</option>`).join("");
+  toggleCallFields();
+}
+function toggleCallFields() {
+  const opt = $("callTool").selectedOptions[0];
+  const isCli = opt && opt.text.endsWith("(cli)");
+  $("cliFields").classList.toggle("hidden", !isCli);
+  $("endpointFields").classList.toggle("hidden", isCli);
+}
+async function doSearch() {
+  const q = encodeURIComponent($("searchQ").value);
+  const kind = $("searchKind").value;
+  const { data } = await api(`/v1/search?q=${q}` + (kind ? "&kind=" + kind : ""));
+  const hits = data.hits || [];
+  $("searchGrid").innerHTML = hits.map(h => toolCard(h)).join("") || `<p class="muted">没有匹配的工具</p>`;
+}
+async function doCall() {
+  const name = $("callTool").value;
+  const opt = $("callTool").selectedOptions[0];
+  const isCli = opt && opt.text.endsWith("(cli)");
+  let payload;
+  if (isCli) {
+    payload = {
+      params: JSON.parse($("callParams").value || "{}"),
+      args: $("callArgs").value.split("\n").filter(Boolean),
+      stdin: $("callStdin").value || null
+    };
+  } else {
+    let body = $("callBody").value;
+    let parsed = body;
+    if (body) { try { parsed = JSON.parse(body); } catch {} }
+    payload = {
+      method: $("callMethod").value,
+      path: $("callPath").value,
+      query: $("callQuery").value,
+      body: parsed || ""
+    };
+  }
+  const { status, data } = await api(`/v1/call/${name}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  $("callResult").textContent = `HTTP ${status}\n` + JSON.stringify(data, null, 2);
+}
+async function loadAudit() {
+  const tool = $("auditTool").value;
+  const limit = $("auditLimit").value || 50;
+  const q = new URLSearchParams({ limit });
+  if (tool) q.set("tool", tool);
+  const { data } = await api("/v1/admin/audit?" + q.toString());
+  $("auditResult").textContent = JSON.stringify(data.events || data, null, 2);
+}
+// tabs
+document.querySelectorAll(".tabs button").forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll(".tabs button").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    ["catalog","search","call","audit"].forEach(t =>
+      $("tab-" + t).classList.toggle("hidden", t !== btn.dataset.tab));
+  };
+});
+// wire up
+$("saveConn").onclick = () => {
+  localStorage.setItem("tg_base", $("baseUrl").value);
+  localStorage.setItem("tg_token", $("token").value);
+  loadHealth().then(loadTools);
+  toast("连接信息已保存到本浏览器");
+};
+$("refreshTools").onclick = loadTools;
+$("filterKind").onchange = loadTools;
+$("doSearch").onclick = doSearch;
+$("searchQ").addEventListener("keydown", e => e.key === "Enter" && doSearch());
+$("doCall").onclick = () => doCall().catch(e => toast(String(e), true));
+$("doAudit").onclick = () => loadAudit().catch(e => toast(String(e), true));
+$("callTool").onchange = toggleCallFields;
+// restore
+$("baseUrl").value = localStorage.getItem("tg_base") || "";
+$("token").value = localStorage.getItem("tg_token") || "";
+loadHealth().then(loadTools).catch(() => {});
+</script>
+</body>
+</html>

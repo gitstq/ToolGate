@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "toolgate"
+version = "1.0.0"
+description = "Self-hosted tool gateway for AI agents — one base URL, one token, every HTTP API and CLI tool, with encrypted server-side credential injection."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "ToolGate Contributors" }]
+keywords = [
+    "ai-agents", "gateway", "tooling", "credentials", "secrets",
+    "reverse-proxy", "cli", "mcp", "self-hosted", "llm",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Internet :: Proxy Servers",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Security",
+]
+dependencies = ["cryptography>=42.0.0"]
+
+[project.scripts]
+toolgate = "toolgate.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/gitstq/ToolGate"
+Repository = "https://github.com/gitstq/ToolGate"
+Issues = "https://github.com/gitstq/ToolGate/issues"
+Changelog = "https://github.com/gitstq/ToolGate/releases"
+
+[tool.setuptools]
+packages = ["toolgate"]
+
+[tool.setuptools.package-data]
+toolgate = ["web/*.html"]
